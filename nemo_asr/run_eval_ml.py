@@ -14,7 +14,8 @@ from datasets import load_dataset, Audio
 from normalizer import data_utils
 from normalizer.eval_utils import normalize_compound_pairs
 from nemo.collections.asr.models import ASRModel
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
+from huggingface_hub import hf_hub_download
 import time
 
 
@@ -74,7 +75,17 @@ def main(args):
         dataset = dataset.select(range(min(args.max_eval_samples, len(dataset))))
 
     # Configure decoding strategy
-    if asr_model.cfg.decoding.strategy != "beam":
+    if "Lapillus" in args.model_id:
+        # Beam search + n-gram LM decoding, as recommended in the model card
+        lm_path = hf_hub_download(args.model_id, "lm/hy_tok6_lm.nemo")
+        with open_dict(asr_model.cfg.decoding):
+            asr_model.cfg.decoding.strategy = "malsd_batch"
+            asr_model.cfg.decoding.beam.beam_size = 4
+            asr_model.cfg.decoding.beam.return_best_hypothesis = True
+            asr_model.cfg.decoding.beam.ngram_lm_model = lm_path
+            asr_model.cfg.decoding.beam.ngram_lm_alpha = 0.3
+        asr_model.change_decoding_strategy(asr_model.cfg.decoding, decoder_type="rnnt")
+    elif asr_model.cfg.decoding.strategy != "beam":
         asr_model.cfg.decoding.strategy = "greedy_batch"
         if hasattr(asr_model.cfg.decoding, "greedy"):
             OmegaConf.update(asr_model.cfg.decoding, "greedy.use_cuda_graph_decoder", False, force_add=True)

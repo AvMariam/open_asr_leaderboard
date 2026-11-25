@@ -31,6 +31,7 @@ MODEL_CONFIGS=(
     "nvidia/parakeet-tdt-0.6b-v3      64 de fr it es pt nl"
     "nvidia/canary-1b-v2              64 de fr it es pt nl"
     "nvidia/stt_hy_fastconformer_hybrid_large_pc 64 hy"
+    "davitlive5/Lapillus-v2           64 hy"
     "qvac/TranscribePsy-250M-EU-sub   64 de fr it es pt nl"
 )
 
